@@ -17,7 +17,7 @@ const nextConfig = {
         // 👇 2. 백엔드 주소 뒤에 '/api/:path*'를 붙이는 게 맞는지 확인하세요.
         // 백엔드 컨트롤러가 @RequestMapping("/api/v1/...") 로 시작한다면,
         // 여기서는 destination 끝에 '/api/:path*'를 붙여야 합니다.
-        destination: `${process.env.BACKEND_INTERNAL_URL || 'http://localhost:8080'}/api/:path*`,
+        destination: 'http://backend-app:8080/api/:path*',
       },
     ];
   },
