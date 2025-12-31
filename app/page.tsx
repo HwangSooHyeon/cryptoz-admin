@@ -7,7 +7,7 @@ interface Report {
   id: number;
   title: string;
   summary: string;
-  createdDate?: string; // 백엔드에서 주는 날짜 필드명 확인 필요 (보통 createdAt or createdDate)
+  publishedAt: string; // 백엔드에서 주는 날짜 필드명 확인 필요 (보통 createdAt or createdDate)
 }
 
 export default function Home() {
@@ -17,8 +17,10 @@ export default function Home() {
   // --- 상태 관리 ---
   const [formData, setFormData] = useState({ title: '', summary: '', content: '' });
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
+  // ✅ 메시지 상태 (스낵바용)
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  
   // 프롬프트 관련 상태
   const [promptText, setPromptText] = useState('');
   const [isFetchingPrompt, setIsFetchingPrompt] = useState(false);
@@ -153,8 +155,35 @@ export default function Home() {
     }
   }, [activeTab]);
 
+  // ✅ 스낵바 자동 닫기 타이머 (3초 후 사라짐)
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage(null);
+      }, 3000); // 3000ms = 3초
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+
+      {/* ✅ Snackbar (화면 상단 고정 메시지 창) */}
+      {message && (
+        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 animate-in slide-in-from-top-5 duration-300 ${
+          message.type === 'success' 
+            ? 'bg-indigo-900 text-white border border-indigo-700' 
+            : 'bg-red-600 text-white border border-red-800'
+        }`}>
+          <span className="text-lg">{message.type === 'success' ? '✅' : '🚨'}</span>
+          <span className="font-medium text-sm sm:text-base">{message.text}</span>
+          {/* 닫기 버튼 */}
+          <button onClick={() => setMessage(null)} className="ml-4 text-white/70 hover:text-white">
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto space-y-8">
         
         {/* 헤더 */}
@@ -190,7 +219,7 @@ export default function Home() {
         {/* 탭 1: 리포트 작성 화면 */}
         {activeTab === 'write' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            {/* 프롬프트 생성기 */}
+            {/* 프롬프트 영역 */}
             <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-indigo-900">🤖 AI 프롬프트 도우미</h2>
@@ -202,21 +231,33 @@ export default function Home() {
                   {isFetchingPrompt ? '로딩 중...' : '최신 데이터 가져오기'}
                 </button>
               </div>
-              <div className="relative">
-                <textarea
-                  readOnly
-                  value={promptText}
-                  placeholder="데이터 가져오기 버튼을 누르면 내용이 표시됩니다."
-                  className="w-full h-24 p-3 text-sm bg-white border border-indigo-200 rounded-lg text-gray-600 font-mono resize-none focus:outline-none"
-                />
-                {promptText && (
-                  <button
-                    onClick={handleCopyPrompt}
-                    className="absolute bottom-3 right-3 bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-md hover:bg-indigo-700 shadow-sm"
-                  >
-                    복사
-                  </button>
-                )}
+              
+              {/* 텍스트 에디터 */}
+              <textarea
+                readOnly
+                value={promptText}
+                placeholder="데이터 가져오기 버튼을 누르면 내용이 표시됩니다."
+                className="w-full h-24 p-3 text-sm bg-white border border-indigo-200 rounded-lg text-gray-600 font-mono resize-none focus:outline-none"
+              />
+
+              {/* ✅ 복사 버튼 (텍스트 영역 아래로 이동 & 비활성화 로직 적용) */}
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={handleCopyPrompt}
+                  disabled={!promptText} // 데이터 없으면 비활성화
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${
+                    promptText 
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm cursor-pointer' 
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {/* 아이콘 추가 */}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  프롬프트 복사
+                </button>
               </div>
             </div>
 
@@ -307,7 +348,7 @@ export default function Home() {
                         <td className="px-6 py-4 text-gray-900 font-medium">{report.title}</td>
                         <td className="px-6 py-4 text-gray-500 text-sm truncate max-w-xs">{report.summary}</td>
                         <td className="px-6 py-4 text-gray-400 text-xs">
-                          {report.createdDate || '-'}
+                          {report.publishedAt || '-'}
                         </td>
                       </tr>
                     ))}
