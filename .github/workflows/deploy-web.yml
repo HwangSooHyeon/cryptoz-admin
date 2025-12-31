@@ -1,0 +1,51 @@
+name: Deploy Admin Web
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 도커 이미지 빌드 및 푸시
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # 태그 이름 주의: cryptoz-admin-next
+          tags: ${{ secrets.DOCKER_USERNAME }}/cryptoz-admin-next:latest
+
+      # EC2 배포
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          port: 22
+          script: |
+            echo "🚀 관리자 웹 배포 시작..."
+            
+            # 1. 환경변수 파일(.env) 생성 (백엔드 배포 때와 동일하게 유지)
+            # (만약 백엔드 키가 필요 없다면 생략 가능하지만, 안전을 위해 유지 추천)
+            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+            echo "CRYPTOPANIC_AUTH_TOKEN=${{ secrets.CRYPTOPANIC_AUTH_TOKEN }}" >> .env
+            
+            # 2. 최신 이미지 받기 & 재시작
+            docker compose pull web
+            docker compose up -d web
+            
+            # 3. 청소
+            docker image prune -f
+            echo "✅ 배포 완료!"
