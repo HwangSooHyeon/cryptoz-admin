@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
+// 디버깅용 로그 (서버 터미널에서 확인 가능)
+  console.log('--- Middleware Debug ---');
+  console.log('Request URL:', request.nextUrl.pathname);
+  console.log('Cookie(admin_token):', request.cookies.get('admin_token'));
+  console.log('All Cookies:', request.cookies.getAll()); 
+  console.log('------------------------');
+    
   // 1. 쿠키에서 토큰 꺼내기
   const token = request.cookies.get('admin_token')?.value;
   const { pathname } = request.nextUrl;
