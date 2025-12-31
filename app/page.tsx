@@ -52,11 +52,44 @@ export default function Home() {
     }
   };
 
-  // 2. 클립보드 복사
+  // ✅ 클립보드 복사 함수 (HTTP에서도 동작하도록 수정됨)
+  const copyToClipboard = async (text: string) => {
+    try {
+      // 1. 최신 방식 (HTTPS or Localhost)
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        setMessage({ text: '📋 프롬프트 복사 완료! (API)', type: 'success' });
+      } else {
+        // 2. 옛날 방식 (HTTP - fallback)
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        
+        // 화면 밖으로 보내서 안 보이게 처리
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (successful) {
+          setMessage({ text: '📋 프롬프트 복사 완료! (HTTP)', type: 'success' });
+        } else {
+          throw new Error("복사 실패");
+        }
+      }
+    } catch (err) {
+      console.error('복사 에러:', err);
+      setMessage({ text: '❌ 복사에 실패했습니다.', type: 'error' });
+    }
+  };
+
   const handleCopyPrompt = () => {
     if (!promptText) return;
-    navigator.clipboard.writeText(promptText);
-    setMessage({ text: '📋 프롬프트가 복사되었습니다! AI에게 붙여넣으세요.', type: 'success' });
+    copyToClipboard(promptText);
   };
 
   // 3. 폼 입력 핸들러
