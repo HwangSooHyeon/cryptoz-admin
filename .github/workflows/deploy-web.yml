@@ -38,6 +38,9 @@ jobs:
           port: 22
           script: |
             echo "🚀 관리자 웹 배포 시작..."
+
+            # cryptoz-backend-docker 디렉토리로 이동
+            cd cryptoz-backend-docker/
             
             # 1. 환경변수 파일(.env) 생성 (백엔드 배포 때와 동일하게 유지)
             # (만약 백엔드 키가 필요 없다면 생략 가능하지만, 안전을 위해 유지 추천)
