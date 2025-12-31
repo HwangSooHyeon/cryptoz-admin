@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { logoutAction } from './actions';
-import Cookies from 'js-cookie';
 
 // 리포트 데이터 타입 정의
 interface Report {
@@ -38,13 +37,7 @@ export default function Home() {
     setIsFetchingPrompt(true);
     setMessage(null);
     try {
-      const token = Cookies.get('admin_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/prompt-data`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/prompt-data`);
       const json = await res.json();
       if (json.success === true) {
         setPromptText(json.data); // 받아온 텍스트 세팅
@@ -114,10 +107,9 @@ export default function Home() {
     setMessage(null);
 
     try {
-      const token = Cookies.get('admin_token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
       const json = await response.json();
@@ -141,13 +133,7 @@ export default function Home() {
   const fetchReports = async () => {
     setIsLoadingList(true);
     try {
-      const token = Cookies.get('admin_token');
-      const res = await fetch('/api/v1/reports', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }); // GET 요청
+      const res = await fetch('/api/v1/reports'); // GET 요청
       const json = await res.json();
       // 백엔드 응답 구조에 따라 수정 필요 (보통 json.data에 리스트가 있음)
       if (json.data) {

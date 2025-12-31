@@ -2,35 +2,41 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // 쿠키에서 토큰 가져오기
+  // 1. 쿠키에서 토큰 꺼내기 (서버라서 HttpOnly 쿠키도 읽을 수 있음!)
   const token = request.cookies.get('admin_token')?.value;
-
-  // 현재 경로
   const { pathname } = request.nextUrl;
 
-  // 1. 로그인이 안 됐는데 메인 페이지('/') 등 보호된 경로로 가려할 때
+  // --- 기존 로그인 보호 로직 ---
   if (!token && pathname !== '/login') {
     return NextResponse.redirect(new URL('/login', request.url));
   }
-
-  // 2. 이미 로그인했는데 로그인 페이지로 가려할 때
   if (token && pathname === '/login') {
     return NextResponse.redirect(new URL('/', request.url));
+  }
+  // -------------------------
+
+  // ✅ 2. API 요청인 경우, 헤더에 토큰 주입하기
+  // (클라이언트가 보낸 요청을 가로채서 헤더를 붙인 뒤 백엔드로 넘겨줍니다)
+  if (pathname.startsWith('/api/')) {
+    const requestHeaders = new Headers(request.headers);
+    
+    if (token) {
+      requestHeaders.set('Authorization', `Bearer ${token}`);
+    }
+
+    // 수정된 헤더를 포함해서 다음 단계(Rewrite -> 백엔드)로 진행
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   return NextResponse.next();
 }
 
-// 미들웨어가 적용될 경로 설정
 export const config = {
   matcher: [
-    /*
-     * 아래 경로를 제외한 모든 경로에 미들웨어 적용:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };
