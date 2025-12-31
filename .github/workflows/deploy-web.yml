@@ -46,7 +46,10 @@ jobs:
             # (만약 백엔드 키가 필요 없다면 생략 가능하지만, 안전을 위해 유지 추천)
             echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
             echo "CRYPTOPANIC_AUTH_TOKEN=${{ secrets.CRYPTOPANIC_AUTH_TOKEN }}" >> .env
-            
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}" >> .env
+            echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
+
             # 2. 최신 이미지 받기 & 재시작
             docker compose pull web
             docker compose up -d web
