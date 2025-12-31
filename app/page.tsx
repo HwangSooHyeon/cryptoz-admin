@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { logoutAction } from './actions';
+import Cookies from 'js-cookie';
 
 // 리포트 데이터 타입 정의
 interface Report {
@@ -107,9 +109,10 @@ export default function Home() {
     setMessage(null);
 
     try {
+      const token = Cookies.get('admin_token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(formData),
       });
       const json = await response.json();
@@ -133,7 +136,13 @@ export default function Home() {
   const fetchReports = async () => {
     setIsLoadingList(true);
     try {
-      const res = await fetch('/api/v1/reports'); // GET 요청
+      const token = Cookies.get('admin_token');
+      const res = await fetch('/api/v1/reports', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }); // GET 요청
       const json = await res.json();
       // 백엔드 응답 구조에 따라 수정 필요 (보통 json.data에 리스트가 있음)
       if (json.data) {
@@ -190,6 +199,13 @@ export default function Home() {
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Cryptoz Admin</h1>
           <p className="text-gray-600">AI 리포트 생성 및 관리 시스템</p>
+
+          {/* 로그아웃 버튼 */}
+          <form action={logoutAction} className="absolute right-0 top-0">
+             <button className="text-sm text-red-500 underline hover:text-red-700">
+               로그아웃
+             </button>
+          </form>
         </div>
 
         {/* 탭 네비게이션 */}
@@ -299,11 +315,6 @@ export default function Home() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-sm text-black"
                   />
                 </div>
-                {message && (
-                  <div className={`p-4 rounded-md text-sm font-medium ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                    {message.text}
-                  </div>
-                )}
                 <button
                   type="submit"
                   disabled={isLoading}
