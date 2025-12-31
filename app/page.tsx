@@ -22,7 +22,7 @@ export default function Home() {
 
   // ✅ 메시지 상태 (스낵바용)
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-  
+
   // 프롬프트 관련 상태
   const [promptText, setPromptText] = useState('');
   const [isFetchingPrompt, setIsFetchingPrompt] = useState(false);
@@ -32,19 +32,24 @@ export default function Home() {
   const [isLoadingList, setIsLoadingList] = useState(false);
 
   // --- 핸들러 ---
-  
+
   // 1. 프롬프트 데이터 가져오기
   const handleFetchPrompt = async () => {
     setIsFetchingPrompt(true);
     setMessage(null);
     try {
-      // 백엔드 API 호출
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/prompt-data`);
+      const token = Cookies.get('admin_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/prompt-data`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       const json = await res.json();
       if (json.success === true) {
         setPromptText(json.data); // 받아온 텍스트 세팅
         return;
-      } 
+      }
       if (json.success === false) {
         setMessage({ text: '데이터를 가져오는데 실패했습니다.', type: 'error' });
       }
@@ -67,18 +72,18 @@ export default function Home() {
         // 2. 옛날 방식 (HTTP - fallback)
         const textArea = document.createElement("textarea");
         textArea.value = text;
-        
+
         // 화면 밖으로 보내서 안 보이게 처리
         textArea.style.position = "fixed";
         textArea.style.left = "-9999px";
-        
+
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        
+
         const successful = document.execCommand('copy');
         document.body.removeChild(textArea);
-        
+
         if (successful) {
           setMessage({ text: '📋 프롬프트 복사 완료! (HTTP)', type: 'success' });
         } else {
@@ -121,7 +126,7 @@ export default function Home() {
         setMessage({ text: '✅ 리포트 발행 성공!', type: 'success' });
         setFormData({ title: '', summary: '', content: '' });
         return;
-      } 
+      }
       if (json.success === false) {
         setMessage({ text: '❌ 발행 실패', type: 'error' });
       }
@@ -179,11 +184,10 @@ export default function Home() {
 
       {/* ✅ Snackbar (화면 상단 고정 메시지 창) */}
       {message && (
-        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 animate-in slide-in-from-top-5 duration-300 ${
-          message.type === 'success' 
-            ? 'bg-indigo-900 text-white border border-indigo-700' 
-            : 'bg-red-600 text-white border border-red-800'
-        }`}>
+        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 animate-in slide-in-from-top-5 duration-300 ${message.type === 'success'
+          ? 'bg-indigo-900 text-white border border-indigo-700'
+          : 'bg-red-600 text-white border border-red-800'
+          }`}>
           <span className="text-lg">{message.type === 'success' ? '✅' : '🚨'}</span>
           <span className="font-medium text-sm sm:text-base">{message.text}</span>
           {/* 닫기 버튼 */}
@@ -194,7 +198,7 @@ export default function Home() {
       )}
 
       <div className="max-w-4xl mx-auto space-y-8">
-        
+
         {/* 헤더 */}
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Cryptoz Admin</h1>
@@ -202,9 +206,9 @@ export default function Home() {
 
           {/* 로그아웃 버튼 */}
           <form action={logoutAction} className="absolute right-0 top-0">
-             <button className="text-sm text-red-500 underline hover:text-red-700">
-               로그아웃
-             </button>
+            <button className="text-sm text-red-500 underline hover:text-red-700">
+              로그아웃
+            </button>
           </form>
         </div>
 
@@ -212,21 +216,19 @@ export default function Home() {
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveTab('write')}
-            className={`flex-1 py-4 text-center text-sm font-medium ${
-              activeTab === 'write'
-                ? 'border-b-2 border-indigo-600 text-indigo-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            className={`flex-1 py-4 text-center text-sm font-medium ${activeTab === 'write'
+              ? 'border-b-2 border-indigo-600 text-indigo-600'
+              : 'text-gray-500 hover:text-gray-700'
+              }`}
           >
             ✏️ 리포트 작성
           </button>
           <button
             onClick={() => setActiveTab('list')}
-            className={`flex-1 py-4 text-center text-sm font-medium ${
-              activeTab === 'list'
-                ? 'border-b-2 border-indigo-600 text-indigo-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            className={`flex-1 py-4 text-center text-sm font-medium ${activeTab === 'list'
+              ? 'border-b-2 border-indigo-600 text-indigo-600'
+              : 'text-gray-500 hover:text-gray-700'
+              }`}
           >
             📋 리포트 목록 확인
           </button>
@@ -247,7 +249,7 @@ export default function Home() {
                   {isFetchingPrompt ? '로딩 중...' : '최신 데이터 가져오기'}
                 </button>
               </div>
-              
+
               {/* 텍스트 에디터 */}
               <textarea
                 readOnly
@@ -261,11 +263,10 @@ export default function Home() {
                 <button
                   onClick={handleCopyPrompt}
                   disabled={!promptText} // 데이터 없으면 비활성화
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${
-                    promptText 
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm cursor-pointer' 
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${promptText
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm cursor-pointer'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
                 >
                   {/* 아이콘 추가 */}
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -336,7 +337,7 @@ export default function Home() {
                 🔄 새로고침
               </button>
             </div>
-            
+
             {isLoadingList ? (
               <div className="p-10 text-center text-gray-500">로딩 중...</div>
             ) : reports.length === 0 ? (
