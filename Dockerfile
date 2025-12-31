@@ -9,8 +9,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# 환경변수는 빌드 시점이 아니라 실행 시점에 주입받지만, 빌드 에러 방지용 더미
-ENV NEXT_PUBLIC_API_URL=""
+
+# 빌드 시점에 사용할 환경변수 선언 (값은 비워둬도 됨, 에러 방지용)
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN npm run build
 
 # 3. 실행 (Runner) - 매우 가벼운 이미지

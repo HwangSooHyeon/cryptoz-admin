@@ -25,6 +25,8 @@ jobs:
           push: true
           # 태그 이름 주의: cryptoz-admin-next
           tags: ${{ secrets.DOCKER_USERNAME }}/cryptoz-admin-next:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://3.37.129.128:8080/api/v1
 
       # EC2 배포
       - name: Deploy to EC2
