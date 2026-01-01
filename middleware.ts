@@ -7,6 +7,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   console.log(`[Middleware] Processing ${pathname}`);
+  console.log(`[Middleware] Cookies:`, request.cookies.getAll().map(c => `${c.name}=${c.value}`));
 
   // --- 로그인 보호 로직 ---
   // 토큰이 없고, 로그인 페이지가 아닌 경우
