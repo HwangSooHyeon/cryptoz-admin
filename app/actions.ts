@@ -30,10 +30,11 @@ export async function loginAction(prevState: any, formData: FormData) {
     const token = data.accessToken; // 백엔드 응답 필드명에 맞춰 수정 (예: token, accessToken)
     const cookieStore = await cookies();
 
-    // 2. 쿠키에 토큰 저장 (HttpOnly로 보안 강화)
+    // 2. 쿠키에 토큰 저장
+    // 주의: HTTPS가 아닌 HTTP 환경(로컬/사설망)에서 테스트 중이라면 secure: false여야 함
     cookieStore.set('admin_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // 👈 일단 false로 고정해서 테스트 (HTTPS 적용 후 true로 복구 필요)
       maxAge: 60 * 60 * 24, // 1일 유지
       path: '/',
     });
