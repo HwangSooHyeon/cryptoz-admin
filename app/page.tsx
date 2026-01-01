@@ -37,7 +37,13 @@ export default function Home() {
     setIsFetchingPrompt(true);
     setMessage(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/prompt-data`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/prompt-data`, {
+        method: 'GET',
+        credentials: 'include', // 이 옵션이 있어야 쿠키를 실어 보냅니다!
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       const json = await res.json();
       if (json.success === true) {
         setPromptText(json.data); // 받아온 텍스트 세팅
