@@ -2,31 +2,26 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-// 디버깅용 로그 (서버 터미널에서 확인 가능)
-  console.log('--- Middleware Debug ---');
-  console.log('Request URL:', request.nextUrl.pathname);
-  console.log('Cookie(admin_token):', request.cookies.get('admin_token'));
-  console.log('All Cookies:', request.cookies.getAll()); 
-  console.log('------------------------');
-    
   // 1. 쿠키에서 토큰 꺼내기
   const token = request.cookies.get('admin_token')?.value;
   const { pathname } = request.nextUrl;
 
-  // --- [수정된 부분] 로그인 보호 로직 ---
+  console.log(`[Middleware] Processing ${pathname}`);
+
+  // --- 로그인 보호 로직 ---
+  // 토큰이 없고, 로그인 페이지가 아닌 경우
   if (!token && pathname !== '/login') {
-    // ✅ API 요청인 경우: 리다이렉트 하지 말고 401 JSON 에러를 반환
+    // API 요청인 경우: 401 반환
     if (pathname.startsWith('/api/')) {
+      console.log(`[Middleware] Unauthorized API access: ${pathname}`);
       return NextResponse.json(
         { success: false, message: 'Authentication required' },
         { status: 401 }
       );
     }
-
-    // ✅ 일반 페이지 요청인 경우: 로그인 페이지로 리다이렉트
+    // 일반 페이지: 로그인 리다이렉트
     return NextResponse.redirect(new URL('/login', request.url));
   }
-  // ---------------------------------
 
   // 이미 로그인된 상태에서 로그인 페이지 접근 시 메인으로 이동
   if (token && pathname === '/login') {
@@ -39,6 +34,7 @@ export function middleware(request: NextRequest) {
     
     if (token) {
       requestHeaders.set('Authorization', `Bearer ${token}`);
+      console.log(`[Middleware] Injected Authorization header for ${pathname}`);
     }
 
     return NextResponse.next({
