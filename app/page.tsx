@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { logoutAction } from './actions';
+import { logoutAction, getPromptDataAction, createReportAction, getReportsAction } from './actions';
 
 interface Report {
   id: number;
@@ -27,20 +27,15 @@ export default function Home() {
     setIsFetchingPrompt(true);
     setMessage(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/prompt-data`, {
-        method: 'GET',
-        credentials: 'include', // 이 옵션이 있어야 쿠키를 실어 보냅니다!
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      const json = await res.json();
+      // Server Action 호출
+      const json = await getPromptDataAction();
+
       if (json.success === true) {
         setPromptText(json.data);
         return;
       }
       if (json.success === false) {
-        setMessage({ text: '데이터를 가져오는데 실패했습니다.', type: 'error' });
+        setMessage({ text: json.message || '데이터를 가져오는데 실패했습니다.', type: 'error' });
       }
     } catch (e) {
       console.error(e);
@@ -96,12 +91,14 @@ export default function Home() {
     setMessage(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      const json = await response.json();
+      // FormData 생성
+      const fd = new FormData();
+      fd.append('title', formData.title);
+      fd.append('summary', formData.summary);
+      fd.append('content', formData.content);
+
+      // Server Action 호출
+      const json = await createReportAction(null, fd);
 
       if (json.success === true) {
         setMessage({ text: '리포트 발행 성공!', type: 'success' });
@@ -109,7 +106,7 @@ export default function Home() {
         return;
       }
       if (json.success === false) {
-        setMessage({ text: '발행 실패', type: 'error' });
+        setMessage({ text: json.message || '발행 실패', type: 'error' });
       }
     } catch (error) {
       setMessage({ text: '서버 에러', type: 'error' });
@@ -121,8 +118,9 @@ export default function Home() {
   const fetchReports = async () => {
     setIsLoadingList(true);
     try {
-      const res = await fetch('/api/v1/reports');
-      const json = await res.json();
+      // Server Action 호출
+      const json = await getReportsAction();
+
       if (json.data) {
         setReports(json.data);
       } else if (Array.isArray(json)) {

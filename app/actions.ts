@@ -44,6 +44,83 @@ export async function loginAction(prevState: any, formData: FormData) {
   redirect('/');
 }
 
+export async function getPromptDataAction() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('admin_token')?.value;
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/v1/admin/prompt-data`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+        if (res.status === 401) return { success: false, message: '인증이 필요합니다.' };
+        return { success: false, message: '데이터를 가져오는데 실패했습니다.' };
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: '서버 에러가 발생했습니다.' };
+  }
+}
+
+export async function createReportAction(prevState: any, formData: FormData) {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('admin_token')?.value;
+
+    // FormData를 객체로 변환
+    const data = {
+        title: formData.get('title'),
+        summary: formData.get('summary'),
+        content: formData.get('content'),
+    };
+
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/v1/reports`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : '',
+            },
+            body: JSON.stringify(data),
+        });
+
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: '서버 에러가 발생했습니다.' };
+    }
+}
+
+export async function getReportsAction() {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('admin_token')?.value;
+
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/v1/reports`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : '',
+            },
+            cache: 'no-store', // 항상 최신 데이터
+        });
+        
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: '목록 조회 실패' };
+    }
+}
+
 export async function logoutAction() {
   const cookieStore = await cookies();
   cookieStore.delete('admin_token');
