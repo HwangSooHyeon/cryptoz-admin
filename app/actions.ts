@@ -3,8 +3,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-// 백엔드 URL (도커 내부망 통신)
-const BACKEND_URL = 'http://backend-app:8080'; 
+const BACKEND_URL = process.env.BACKEND_URL || 'http://backend-app:8080'; 
 
 export async function loginAction(prevState: any, formData: FormData) {
   const username = formData.get('username') as string;
@@ -15,7 +14,6 @@ export async function loginAction(prevState: any, formData: FormData) {
   }
 
   try {
-    // 1. 백엔드로 로그인 요청
     const res = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -27,14 +25,13 @@ export async function loginAction(prevState: any, formData: FormData) {
     }
 
     const data = await res.json();
-    const token = data.accessToken; // 백엔드 응답 필드명에 맞춰 수정 (예: token, accessToken)
+    const token = data.accessToken;
     const cookieStore = await cookies();
 
-    // 2. 쿠키에 토큰 저장
     // 주의: HTTPS가 아닌 HTTP 환경(로컬/사설망)에서 테스트 중이라면 secure: false여야 함
     cookieStore.set('admin_token', token, {
       httpOnly: true,
-      secure: false, // 👈 일단 false로 고정해서 테스트 (HTTPS 적용 후 true로 복구 필요)
+      secure: false,
       maxAge: 60 * 60 * 24, // 1일 유지
       path: '/',
     });
@@ -44,11 +41,9 @@ export async function loginAction(prevState: any, formData: FormData) {
     return { message: '서버 에러가 발생했습니다.' };
   }
 
-  // 3. 로그인 성공 시 메인으로 이동
   redirect('/');
 }
 
-// 로그아웃 액션
 export async function logoutAction() {
   const cookieStore = await cookies();
   cookieStore.delete('admin_token');

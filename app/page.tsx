@@ -3,36 +3,26 @@
 import { useState, useEffect } from 'react';
 import { logoutAction } from './actions';
 
-// 리포트 데이터 타입 정의
 interface Report {
   id: number;
   title: string;
   summary: string;
-  publishedAt: string; // 백엔드에서 주는 날짜 필드명 확인 필요 (보통 createdAt or createdDate)
+  publishedAt: string;
 }
 
 export default function Home() {
-  // --- 탭 상태 관리 (write | list) ---
   const [activeTab, setActiveTab] = useState<'write' | 'list'>('write');
 
-  // --- 상태 관리 ---
   const [formData, setFormData] = useState({ title: '', summary: '', content: '' });
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ 메시지 상태 (스낵바용)
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-
-  // 프롬프트 관련 상태
   const [promptText, setPromptText] = useState('');
   const [isFetchingPrompt, setIsFetchingPrompt] = useState(false);
 
-  // --- 리포트 목록 상태 ---
   const [reports, setReports] = useState<Report[]>([]);
   const [isLoadingList, setIsLoadingList] = useState(false);
 
-  // --- 핸들러 ---
-
-  // 1. 프롬프트 데이터 가져오기
   const handleFetchPrompt = async () => {
     setIsFetchingPrompt(true);
     setMessage(null);
@@ -46,7 +36,7 @@ export default function Home() {
       });
       const json = await res.json();
       if (json.success === true) {
-        setPromptText(json.data); // 받아온 텍스트 세팅
+        setPromptText(json.data);
         return;
       }
       if (json.success === false) {
@@ -60,19 +50,15 @@ export default function Home() {
     }
   };
 
-  // ✅ 클립보드 복사 함수 (HTTP에서도 동작하도록 수정됨)
   const copyToClipboard = async (text: string) => {
     try {
-      // 1. 최신 방식 (HTTPS or Localhost)
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
-        setMessage({ text: '📋 프롬프트 복사 완료! (API)', type: 'success' });
+        setMessage({ text: '복사 완료!', type: 'success' });
       } else {
-        // 2. 옛날 방식 (HTTP - fallback)
         const textArea = document.createElement("textarea");
         textArea.value = text;
 
-        // 화면 밖으로 보내서 안 보이게 처리
         textArea.style.position = "fixed";
         textArea.style.left = "-9999px";
 
@@ -84,14 +70,14 @@ export default function Home() {
         document.body.removeChild(textArea);
 
         if (successful) {
-          setMessage({ text: '📋 프롬프트 복사 완료! (HTTP)', type: 'success' });
+          setMessage({ text: '복사 완료!', type: 'success' });
         } else {
           throw new Error("복사 실패");
         }
       }
     } catch (err) {
       console.error('복사 에러:', err);
-      setMessage({ text: '❌ 복사에 실패했습니다.', type: 'error' });
+      setMessage({ text: '복사에 실패했습니다.', type: 'error' });
     }
   };
 
@@ -100,13 +86,10 @@ export default function Home() {
     copyToClipboard(promptText);
   };
 
-  // 3. 폼 입력 핸들러
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
-  // 4. 리포트 발행 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -121,27 +104,25 @@ export default function Home() {
       const json = await response.json();
 
       if (json.success === true) {
-        setMessage({ text: '✅ 리포트 발행 성공!', type: 'success' });
+        setMessage({ text: '리포트 발행 성공!', type: 'success' });
         setFormData({ title: '', summary: '', content: '' });
         return;
       }
       if (json.success === false) {
-        setMessage({ text: '❌ 발행 실패', type: 'error' });
+        setMessage({ text: '발행 실패', type: 'error' });
       }
     } catch (error) {
-      setMessage({ text: '❌ 서버 에러', type: 'error' });
+      setMessage({ text: '서버 에러', type: 'error' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 3. 리포트 목록 가져오기 (GET)
   const fetchReports = async () => {
     setIsLoadingList(true);
     try {
-      const res = await fetch('/api/v1/reports'); // GET 요청
+      const res = await fetch('/api/v1/reports');
       const json = await res.json();
-      // 백엔드 응답 구조에 따라 수정 필요 (보통 json.data에 리스트가 있음)
       if (json.data) {
         setReports(json.data);
       } else if (Array.isArray(json)) {
@@ -154,19 +135,17 @@ export default function Home() {
     }
   };
 
-  // 탭이 'list'로 바뀔 때마다 데이터 갱신
   useEffect(() => {
     if (activeTab === 'list') {
       fetchReports();
     }
   }, [activeTab]);
 
-  // ✅ 스낵바 자동 닫기 타이머 (3초 후 사라짐)
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
         setMessage(null);
-      }, 3000); // 3000ms = 3초
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [message]);
@@ -174,13 +153,12 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
 
-      {/* ✅ Snackbar (화면 상단 고정 메시지 창) */}
+      {/* Snackbar */}
       {message && (
         <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 animate-in slide-in-from-top-5 duration-300 ${message.type === 'success'
           ? 'bg-indigo-900 text-white border border-indigo-700'
           : 'bg-red-600 text-white border border-red-800'
           }`}>
-          <span className="text-lg">{message.type === 'success' ? '✅' : '🚨'}</span>
           <span className="font-medium text-sm sm:text-base">{message.text}</span>
           {/* 닫기 버튼 */}
           <button onClick={() => setMessage(null)} className="ml-4 text-white/70 hover:text-white">
@@ -198,7 +176,12 @@ export default function Home() {
 
           {/* 로그아웃 버튼 */}
           <form action={logoutAction} className="absolute right-0 top-0">
-            <button className="text-sm text-red-500 underline hover:text-red-700">
+            <button className="group flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-500 transition-all rounded-lg hover:bg-red-50 hover:text-red-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-red-600">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
               로그아웃
             </button>
           </form>
@@ -250,11 +233,11 @@ export default function Home() {
                 className="w-full h-24 p-3 text-sm bg-white border border-indigo-200 rounded-lg text-gray-600 font-mono resize-none focus:outline-none"
               />
 
-              {/* ✅ 복사 버튼 (텍스트 영역 아래로 이동 & 비활성화 로직 적용) */}
+              {/* 복사 버튼 */}
               <div className="mt-3 flex justify-end">
                 <button
                   onClick={handleCopyPrompt}
-                  disabled={!promptText} // 데이터 없으면 비활성화
+                  disabled={!promptText}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${promptText
                     ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm cursor-pointer'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
@@ -320,13 +303,34 @@ export default function Home() {
           </div>
         )}
 
-        {/* 탭 2: 리포트 목록 화면 (New!) */}
+        {/* 탭 2: 리포트 목록 화면 */}
         {activeTab === 'list' && (
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden animate-in fade-in duration-300">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-800">등록된 리포트 목록</h2>
-              <button onClick={fetchReports} className="text-sm text-indigo-600 hover:text-indigo-800">
-                🔄 새로고침
+              <button
+                onClick={fetchReports}
+                disabled={isLoadingList}
+                className="group flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg transition-all hover:bg-indigo-100 hover:text-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={`transition-transform duration-500 ${isLoadingList ? 'animate-spin' : 'group-hover:rotate-180'}`}
+                >
+                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                  <path d="M3 3v5h5"></path>
+                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                  <path d="M16 16h5v5"></path>
+                </svg>
+                {isLoadingList ? '로딩 중...' : '새로고침'}
               </button>
             </div>
 
